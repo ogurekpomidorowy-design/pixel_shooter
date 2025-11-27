@@ -52,9 +52,10 @@ class Shop:
                 weapon_rect = scaled_weapon_image.get_rect(center=(item_x + WEAPON_WIDTH // 2, item_y + WEAPON_HEIGHT // 2))
                 screen.blit(scaled_weapon_image, weapon_rect.topleft)
 
-            # Draw item name above the weapon image with smaller font
-            name_surface = assets.font_button.render(item["name"], True, BUTTON_TEXT)
-            name_rect = name_surface.get_rect(center=(item_x + WEAPON_WIDTH // 2, item_y - 10))  # Position above the image
+            # Draw item name above the weapon image with slightly smaller font
+            font = pygame.font.Font(None, 40)  # Very slightly reduced font size for weapon names
+            name_surface = font.render(item["name"], True, BUTTON_TEXT)
+            name_rect = name_surface.get_rect(center=(item_x + WEAPON_WIDTH // 2, item_y - 25))  # Adjusted position above the image
             screen.blit(name_surface, name_rect)
 
             # Draw item price
