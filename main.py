@@ -86,7 +86,7 @@ class Game:
                     return
 
             # Check collisions between fireballs and enemies
-            self.enemies.check_collisions(self.weapons.fireballs)
+            self.enemies.check_collisions(self.weapons.fireballs, self.player.y)
 
     def draw(self):
         if self.game_state == "menu":
