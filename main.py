@@ -8,6 +8,7 @@ from enemies import Enemy
 from weapons import Weapons
 from menu import Menu
 from shop import Shop
+from settings import Settings
 
 class Game:
     def __init__(self):
@@ -34,6 +35,8 @@ class Game:
         self.weapons = Weapons()
         self.menu = Menu()
         self.shop = Shop()
+        self.alt_controls = False  # Control scheme toggle
+        self.settings = Settings(self.alt_controls)
         print("Game initialization complete")
 
     def handle_events(self):
@@ -45,20 +48,36 @@ class Game:
                 if event.key == pygame.K_ESCAPE:
                     if self.game_state in ["shop", "game", "settings"]:
                         self.game_state = "menu"
+                if self.game_state == "settings":
+                    if event.key == pygame.K_c:
+                        self.alt_controls = not self.alt_controls
+                        print(f"Alternate controls: {self.alt_controls}")
                 if self.game_state == "game":
-                    if event.key == pygame.K_SPACE:
-                        self.player.jump()
-                    elif event.key == pygame.K_x:
-                        fireball_pos = self.player.shoot()
-                        self.weapons.add_fireball(fireball_pos["x"], fireball_pos["y"])
-                        if assets.shoot_sound:
-                            assets.shoot_sound.play()
+                    if not self.alt_controls:
+                        if event.key == pygame.K_SPACE:
+                            self.player.jump()
+                        elif event.key == pygame.K_x:
+                            fireball_pos = self.player.shoot()
+                            self.weapons.add_fireball(fireball_pos["x"], fireball_pos["y"])
+                            if assets.shoot_sound:
+                                assets.shoot_sound.play()
+                    else:
+                        if event.key == pygame.K_UP:
+                            self.player.jump()
+                        elif event.key == pygame.K_DOWN:
+                            fireball_pos = self.player.shoot()
+                            self.weapons.add_fireball(fireball_pos["x"], fireball_pos["y"])
+                            if assets.shoot_sound:
+                                assets.shoot_sound.play()
                             
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if self.game_state == "menu":
                     new_state = self.menu.handle_click(event.pos)
                     if new_state:
                         self.game_state = new_state
+                if self.game_state == "settings":
+                    if self.settings.handle_click(event.pos):
+                        self.alt_controls = self.settings.alt_controls
         
         return True
 
@@ -66,13 +85,17 @@ class Game:
         if self.game_state == "game":
             self.player.update()
             
+            # Call the handle_input method in the game loop
+            self.player.handle_input(self.alt_controls)
+            
             # Spawn enemies
             current_time = pygame.time.get_ticks()
             if current_time - self.enemies.spawn_time > random.randint(500, 1000):
                 self.enemies.spawn()
                 self.enemies.spawn_time = current_time
                 
-            self.enemies.update()
+            # Pass the player object to the enemies' update method
+            self.enemies.update(self.player)
             self.weapons.update()
 
             # Check collisions between player and enemies
@@ -86,11 +109,14 @@ class Game:
                     return
 
             # Check collisions between fireballs and enemies
-            self.enemies.check_collisions(self.weapons.fireballs, self.player.y)
+            self.enemies.check_collisions(self.weapons.fireballs, self.player.y, self.player.height)
 
     def draw(self):
         if self.game_state == "menu":
             self.menu.draw(self.screen)
+        elif self.game_state == "settings":
+            self.settings.alt_controls = self.alt_controls
+            self.settings.draw(self.screen)
         elif self.game_state == "game":
             # Draw background
             if assets.background_img:
@@ -98,23 +124,25 @@ class Game:
                     self.screen.blit(assets.background_img, (0, 0))
                 except Exception as e:
                     print(f"Error drawing background: {e}")
-                    self.screen.fill(BG_COLOR)  # Use the configured background color instead of gray
             else:
-                self.screen.fill(BG_COLOR)  # Use the configured background color instead of gray
-                
+                self.screen.fill(BG_COLOR)
+
             self.enemies.draw(self.screen, assets.enemy_img)
             self.weapons.draw(self.screen)
-            
+
             # Draw player
-            if self.player.is_shooting and (pygame.time.get_ticks() - self.player.shoot_start_time) < 100:  # 100ms = 0.1s
+            if self.player.is_shooting and (pygame.time.get_ticks() - self.player.shoot_start_time) < 100:
                 if assets.shoot_character_img:
-                    self.screen.blit(assets.shoot_character_img, 
-                                   (int(self.player.x), int(self.player.y)))
+                    self.screen.blit(assets.shoot_character_img, (int(self.player.x), int(self.player.y)))
             else:
                 self.player.is_shooting = False
                 if assets.main_character_img:
-                    self.screen.blit(assets.main_character_img, 
-                                   (int(self.player.x), int(self.player.y)))
+                    self.screen.blit(assets.main_character_img, (int(self.player.x), int(self.player.y)))
+
+            # Draw coin counter in top right corner
+            font = pygame.font.Font(None, 40)
+            coin_text = font.render(f"Monety: {self.player.coins}", True, (255, 215, 0))
+            self.screen.blit(coin_text, (WINDOW_SIZE[0] - coin_text.get_width() - 20, 20))
         
         elif self.game_state == "shop":
             self.shop.draw(self.screen)
