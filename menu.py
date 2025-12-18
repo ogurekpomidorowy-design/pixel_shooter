@@ -29,6 +29,12 @@ class Menu:
             200,
             50
         )
+        self.eq_btn_rect = pygame.Rect(
+            WINDOW_SIZE[0] // 2 - 100,
+            570,
+            200,
+            50
+        )
 
     def draw(self, screen):
         screen.fill(BG_COLOR)
@@ -59,6 +65,12 @@ class Menu:
         shop_text = assets.font_button.render("SHOP", True, BUTTON_TEXT)
         shop_text_rect = shop_text.get_rect(center=self.shop_btn_rect.center)
         screen.blit(shop_text, shop_text_rect)
+        # Draw EKWIPUNEK button
+        pygame.draw.rect(screen, BUTTON_COLOR, self.eq_btn_rect, border_radius=10)
+        pygame.draw.rect(screen, BUTTON_OUTLINE, self.eq_btn_rect, 4, border_radius=10)
+        eq_text = assets.font_button.render("EKWIPUNEK", True, BUTTON_TEXT)
+        eq_text_rect = eq_text.get_rect(center=self.eq_btn_rect.center)
+        screen.blit(eq_text, eq_text_rect)
 
     def handle_click(self, pos):
         if self.play_btn_rect.collidepoint(pos):
@@ -67,4 +79,6 @@ class Menu:
             return "settings"
         elif self.shop_btn_rect.collidepoint(pos):
             return "shop"
+        elif self.eq_btn_rect.collidepoint(pos):
+            return "ekwipunek"
         return None

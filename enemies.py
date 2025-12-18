@@ -35,23 +35,51 @@ class Enemy:
         self.enemies = []
         self.spawn_time = 0
         self.coins = []  # List to store coins
+        self.stopped = False  # For 'debilny' mode
 
-    def spawn(self):
+    def stop(self):
+        self.stopped = True
+
+    def resume(self):
+        self.stopped = False
+
+    def spawn(self, difficulty='łatwy'):
         enemy_x = 1200
         enemy_y = 400
-        enemy_speed = random.uniform(3, 6)  # Zwiększona prędkość wrogów
-        self.enemies.append({"x": enemy_x, "y": enemy_y, "speed": enemy_speed})
+        base_speed = random.uniform(3, 6)
+        if difficulty == 'debilny':
+            hp = 1
+            enemy_speed = base_speed * 0.8
+        elif difficulty == 'łatwy':
+            hp = 10
+            enemy_speed = base_speed * 0.8
+        elif difficulty == 'średni':
+            hp = 20
+            enemy_speed = base_speed * 0.9
+        elif difficulty == 'trudny':
+            hp = 30
+            enemy_speed = base_speed
+        else:
+            hp = 50
+            enemy_speed = base_speed
+        self.enemies.append({
+            "x": enemy_x,
+            "y": enemy_y,
+            "speed": enemy_speed,
+            "hp": hp,
+            "max_hp": hp
+        })
 
     def update(self, player):
         for enemy in self.enemies[:]:
-            enemy["x"] -= enemy["speed"]
+            if not self.stopped:
+                enemy["x"] -= enemy["speed"]
             if enemy["x"] + 80 < 0:
                 self.enemies.remove(enemy)
 
         # Update coins
         for coin in self.coins[:]:
             if not coin.update(player):
-                # increment player's coin counter when collected
                 try:
                     player.coins += 1
                     print(f"Player collected a coin. Total: {player.coins}")
@@ -59,16 +87,40 @@ class Enemy:
                     print("Warning: could not increment player.coins")
                 self.coins.remove(coin)
 
-    def check_collisions(self, fireballs, player_y, player_height):
+    def check_collisions(self, fireballs, player_y, player_height, weapon_name="Glock"):
+        # Weapon damage mapping
+        weapon_damage = {
+            "Glock": 5,
+            "Rewolwer": 7,
+            "Strzelba Pompka": 10,
+            "Pistolet Maszynowy": 6,
+            "AK-47": 8,
+            "Tomson": 9,
+            "Karabin Szturmowy MP5": 5,
+            "Wyrzutnia Rakiet": 51
+        }
+        area_damage = 12
         for enemy in self.enemies[:]:
             enemy_rect = pygame.Rect(enemy["x"], enemy["y"], 80, 80)
             for fireball in fireballs[:]:
                 fireball_rect = pygame.Rect(fireball["x"] - 5, fireball["y"] - 5, 10, 10)
                 if enemy_rect.colliderect(fireball_rect):
-                    print(f"Collision detected: Enemy at {enemy['x']}, {enemy['y']} hit by fireball at {fireball['x']}, {fireball['y']}")
-                    if enemy in self.enemies:
-                        self.coins.append(Coin(enemy["x"], enemy["y"], player_y, player_height))  # Spawn coin slightly below player
-                        self.enemies.remove(enemy)
+                    dmg = weapon_damage.get(weapon_name, 5)
+                    if weapon_name == "Wyrzutnia Rakiet":
+                        # Area damage
+                        for e2 in self.enemies[:]:
+                            e2_rect = pygame.Rect(e2["x"], e2["y"], 80, 80)
+                            if e2_rect.colliderect(pygame.Rect(fireball["x"]-40, fireball["y"]-40, 90, 90)):
+                                if e2 is enemy:
+                                    e2["hp"] -= dmg
+                                else:
+                                    e2["hp"] -= area_damage
+                    else:
+                        enemy["hp"] -= dmg
+                    if enemy["hp"] <= 0:
+                        self.coins.append(Coin(enemy["x"], enemy["y"], player_y, player_height))
+                        if enemy in self.enemies:
+                            self.enemies.remove(enemy)
                     if fireball in fireballs:
                         fireballs.remove(fireball)
                     break
@@ -77,6 +129,14 @@ class Enemy:
         for enemy in self.enemies:
             if enemy_img:
                 screen.blit(enemy_img, (enemy["x"], enemy["y"]))
+            # Draw health bar
+            bar_width = 80
+            bar_height = 8
+            bar_x = enemy["x"]
+            bar_y = enemy["y"] - 16
+            hp_ratio = max(enemy["hp"], 0) / enemy["max_hp"]
+            pygame.draw.rect(screen, (60, 60, 60), (bar_x, bar_y, bar_width, bar_height))
+            pygame.draw.rect(screen, (200, 40, 40), (bar_x, bar_y, int(bar_width * hp_ratio), bar_height))
 
         # Draw coins
         for coin in self.coins:
