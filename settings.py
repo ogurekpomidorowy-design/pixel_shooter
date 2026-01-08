@@ -3,15 +3,23 @@ from config import *
 from assets import assets
 
 class Settings:
-    def __init__(self, alt_controls, difficulty='łatwy'):
+    def __init__(self, alt_controls, difficulty='łatwy', muted=False):
         self.alt_controls = alt_controls
         self.difficulty = difficulty
+        self.muted = muted
         self.toggle_rect = pygame.Rect(WINDOW_SIZE[0]//2-250, 270, 500, 120)  # Maximum enlargement for text
         # 4 difficulty buttons for 4 modes
         self.diff_rects = [
             pygame.Rect(WINDOW_SIZE[0]//2-250 + i*170, 420, 160, 70) for i in range(4)
         ]
         self.diff_names = ['debilny', 'łatwy', 'średni', 'trudny']
+        # Przycisk mute/unmute
+        self.mute_btn_rect = pygame.Rect(WINDOW_SIZE[0]//2-100, 520, 200, 50)
+
+    def update_mute_state(self):
+        # Ustaw głośność dźwięku na 0 lub 1
+        if assets.shoot_sound:
+            assets.shoot_sound.set_volume(0.0 if self.muted else 1.0)
 
     def draw(self, screen):
         screen.fill(BG_COLOR)
@@ -37,7 +45,18 @@ class Settings:
             diff_text_rect = diff_text.get_rect(center=rect.center)
             screen.blit(diff_text, diff_text_rect)
 
-    def handle_click(self, pos):
+        # Przycisk mute/unmute
+        pygame.draw.rect(screen, (100, 100, 100), self.mute_btn_rect, border_radius=10)
+        pygame.draw.rect(screen, (180, 180, 180), self.mute_btn_rect, 3, border_radius=10)
+        mute_text = "WYCISZONY" if self.muted else "DŹWIĘK: WŁĄCZONY"
+        mute_surface = assets.font_button.render(mute_text, True, (255,255,255))
+        mute_rect = mute_surface.get_rect(center=self.mute_btn_rect.center)
+        screen.blit(mute_surface, mute_rect)
+
+    def handle_click(self, pos, button=1):
+        # button=1 to lewy przycisk myszy
+        if button != 1:
+            return False
         if self.toggle_rect.collidepoint(pos):
             self.alt_controls = not self.alt_controls
             return True
@@ -45,4 +64,9 @@ class Settings:
             if rect.collidepoint(pos):
                 self.difficulty = self.diff_names[i]
                 return True
+        # Przycisk mute/unmute
+        if self.mute_btn_rect.collidepoint(pos):
+            self.muted = not self.muted
+            self.update_mute_state()
+            return True
         return False

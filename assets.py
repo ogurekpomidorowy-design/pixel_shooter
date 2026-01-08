@@ -5,19 +5,20 @@ class AssetLoader:
     def __init__(self):
         # Initialize pygame font module
         pygame.font.init()
-        
+
         self.background_img = None
         self.enemy_img = None
         self.main_character_img = None
         self.shoot_character_img = None
         self.shoot_sound = None
         self.weapon_images = {}
-        
+        self.default_volume = 1.0
+
         # Load fonts
         self.font_title = pygame.font.SysFont("Arial", 120, bold=True)
         self.font_button = pygame.font.SysFont("Arial", 40, bold=True)
         self.font_game_over = pygame.font.SysFont("Arial", 80, bold=True)
-        
+
         self.load_assets()
 
     def load_assets(self):
@@ -56,6 +57,7 @@ class AssetLoader:
         try:
             pygame.mixer.init()  # Make sure mixer is initialized
             self.shoot_sound = pygame.mixer.Sound('grafiki/strzal.mp3')
+            self.shoot_sound.set_volume(self.default_volume)
             print("Shooting sound loaded successfully")
         except pygame.error as e:
             print(f"Error loading shooting sound: {e}")

@@ -47,6 +47,7 @@ class Game:
         self.save_input = None
         self.load_menu = None
         self.player = Player()
+        self.player.coins = 50  # 50 monet na start
         self.enemies = Enemy()
         self.weapons = Weapons()
         self.menu = Menu()
@@ -62,7 +63,8 @@ class Game:
         self.alt_controls = False  # Control scheme toggle
         self.difficulty = 'łatwy'
         self.level = 1  # Dodany poziom
-        self.settings = Settings(self.alt_controls, self.difficulty)
+        self.muted = False
+        self.settings = Settings(self.alt_controls, self.difficulty, self.muted)
         print("Game initialization complete")
 
     def handle_events(self):
@@ -147,6 +149,7 @@ class Game:
                         if new_state == "game":
                             if hasattr(self, 'levels_menu'):
                                 self.level = self.levels_menu.selected_level
+                            # NIE zmieniaj self.difficulty tutaj!
                             self.game_state = new_state
                         elif new_state == "save":
                             self.save_input = SaveNameInput()
@@ -175,12 +178,20 @@ class Game:
                     elif result == "unlocked":
                         self.unlocked_level2 = True
                     elif result is None:
-                        # Zmiana wybranego poziomu
+                        # Zmiana wybranego poziomu (nie zmieniaj difficulty!)
                         self.level = self.levels_menu.selected_level
             if self.game_state == "settings":
-                if self.settings.handle_click(event.pos):
-                    self.alt_controls = self.settings.alt_controls
-                    self.difficulty = self.settings.difficulty
+                # Zawsze synchronizuj difficulty z Game do Settings
+                self.settings.difficulty = self.difficulty
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    button = getattr(event, 'button', 1)  # domyślnie 1 jeśli brak
+                    if self.settings.handle_click(event.pos, button):
+                        self.alt_controls = self.settings.alt_controls
+                        self.difficulty = self.settings.difficulty
+                        self.muted = self.settings.muted
+                        # Ustaw mute/unmute dźwięku
+                        if assets.shoot_sound:
+                            assets.shoot_sound.set_volume(0.0 if self.muted else 1.0)
         return True
 
     def update(self):
@@ -230,6 +241,8 @@ class Game:
         elif self.game_state == "settings":
             self.settings.alt_controls = self.alt_controls
             self.settings.difficulty = self.difficulty
+            self.settings.muted = self.muted
+            self.settings.update_mute_state()
             self.settings.draw(self.screen)
         elif self.game_state == "levels":
             self.levels_menu.unlocked_level2 = self.unlocked_level2

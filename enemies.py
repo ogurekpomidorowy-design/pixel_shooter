@@ -63,7 +63,9 @@ class Enemy:
             hp = 50
             enemy_speed = base_speed
         if level2:
-            hp += 10
+            # Ułatw poziom 2: mniej HP i wolniej
+            hp = max(5, hp - 10)
+            enemy_speed = base_speed * 0.7
         self.enemies.append({
             "x": enemy_x,
             "y": enemy_y,
@@ -83,6 +85,7 @@ class Enemy:
         for coin in self.coins[:]:
             if not coin.update(player):
                 try:
+                    # Zawsze 2 monety na level2
                     if level2:
                         player.coins += 2
                         print(f"Player collected 2 coins. Total: {player.coins}")
