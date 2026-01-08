@@ -101,14 +101,14 @@ WEAPON_HEIGHT = 80
 
 # Define shop items with updated images
 shop_items = [
-    {"name": "Weapon 1", "price": 100, "image": pygame.transform.scale(pygame.image.load('grafiki/1.png').convert_alpha(), (WEAPON_WIDTH, WEAPON_HEIGHT))},
-    {"name": "Weapon 2", "price": 250, "image": pygame.transform.scale(pygame.image.load('grafiki/2.png').convert_alpha(), (WEAPON_WIDTH, WEAPON_HEIGHT))},
-    {"name": "Weapon 3", "price": 500, "image": pygame.transform.scale(pygame.image.load('grafiki/3.png').convert_alpha(), (WEAPON_WIDTH, WEAPON_HEIGHT))},
-    {"name": "Weapon 4", "price": 750, "image": pygame.transform.scale(pygame.image.load('grafiki/4.png').convert_alpha(), (WEAPON_WIDTH, WEAPON_HEIGHT))},
-    {"name": "Weapon 5", "price": 1000, "image": pygame.transform.scale(pygame.image.load('grafiki/5.png').convert_alpha(), (WEAPON_WIDTH, WEAPON_HEIGHT))},
-    {"name": "Weapon 6", "price": 1200, "image": pygame.transform.scale(pygame.image.load('grafiki/6.png').convert_alpha(), (WEAPON_WIDTH, WEAPON_HEIGHT))},
-    {"name": "Weapon 7", "price": 1500, "image": pygame.transform.scale(pygame.image.load('grafiki/7.png').convert_alpha(), (WEAPON_WIDTH, WEAPON_HEIGHT))},
-    {"name": "Weapon 8", "price": 3000, "image": pygame.transform.scale(pygame.image.load('grafiki/8.png').convert_alpha(), (WEAPON_WIDTH, WEAPON_HEIGHT))}
+    {"name": "Weapon 1", "price": 50, "image": pygame.transform.scale(pygame.image.load('grafiki/1.png').convert_alpha(), (WEAPON_WIDTH, WEAPON_HEIGHT))},
+    {"name": "Weapon 2", "price": 125, "image": pygame.transform.scale(pygame.image.load('grafiki/2.png').convert_alpha(), (WEAPON_WIDTH, WEAPON_HEIGHT))},
+    {"name": "Weapon 3", "price": 250, "image": pygame.transform.scale(pygame.image.load('grafiki/3.png').convert_alpha(), (WEAPON_WIDTH, WEAPON_HEIGHT))},
+    {"name": "Weapon 4", "price": 375, "image": pygame.transform.scale(pygame.image.load('grafiki/4.png').convert_alpha(), (WEAPON_WIDTH, WEAPON_HEIGHT))},
+    {"name": "Weapon 5", "price": 500, "image": pygame.transform.scale(pygame.image.load('grafiki/5.png').convert_alpha(), (WEAPON_WIDTH, WEAPON_HEIGHT))},
+    {"name": "Weapon 6", "price": 600, "image": pygame.transform.scale(pygame.image.load('grafiki/6.png').convert_alpha(), (WEAPON_WIDTH, WEAPON_HEIGHT))},
+    {"name": "Weapon 7", "price": 750, "image": pygame.transform.scale(pygame.image.load('grafiki/7.png').convert_alpha(), (WEAPON_WIDTH, WEAPON_HEIGHT))},
+    {"name": "Weapon 8", "price": 1500, "image": pygame.transform.scale(pygame.image.load('grafiki/8.png').convert_alpha(), (WEAPON_WIDTH, WEAPON_HEIGHT))}
 ]
 
 # Reset game variables

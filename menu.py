@@ -35,6 +35,24 @@ class Menu:
             200,
             50
         )
+        self.levels_btn_rect = pygame.Rect(
+            WINDOW_SIZE[0] // 2 - 100,
+            640,
+            200,
+            50
+        )
+        self.save_btn_rect = pygame.Rect(
+            WINDOW_SIZE[0] // 2 - 400,
+            720-70,
+            200,
+            50
+        )
+        self.load_btn_rect = pygame.Rect(
+            WINDOW_SIZE[0] // 2 + 200,
+            720-70,
+            200,
+            50
+        )
 
     def draw(self, screen):
         screen.fill(BG_COLOR)
@@ -72,6 +90,25 @@ class Menu:
         eq_text_rect = eq_text.get_rect(center=self.eq_btn_rect.center)
         screen.blit(eq_text, eq_text_rect)
 
+        # Draw LEVELS button
+        # Draw SAVE button
+        pygame.draw.rect(screen, BUTTON_COLOR, self.save_btn_rect, border_radius=10)
+        pygame.draw.rect(screen, BUTTON_OUTLINE, self.save_btn_rect, 4, border_radius=10)
+        save_text = assets.font_button.render("ZAPISZ GRĘ", True, BUTTON_TEXT)
+        save_text_rect = save_text.get_rect(center=self.save_btn_rect.center)
+        screen.blit(save_text, save_text_rect)
+        # Draw LOAD button
+        pygame.draw.rect(screen, BUTTON_COLOR, self.load_btn_rect, border_radius=10)
+        pygame.draw.rect(screen, BUTTON_OUTLINE, self.load_btn_rect, 4, border_radius=10)
+        load_text = assets.font_button.render("WCZYTAJ GRĘ", True, BUTTON_TEXT)
+        load_text_rect = load_text.get_rect(center=self.load_btn_rect.center)
+        screen.blit(load_text, load_text_rect)
+        pygame.draw.rect(screen, BUTTON_COLOR, self.levels_btn_rect, border_radius=10)
+        pygame.draw.rect(screen, BUTTON_OUTLINE, self.levels_btn_rect, 4, border_radius=10)
+        levels_text = assets.font_button.render("POZIOMY", True, BUTTON_TEXT)
+        levels_text_rect = levels_text.get_rect(center=self.levels_btn_rect.center)
+        screen.blit(levels_text, levels_text_rect)
+
     def handle_click(self, pos):
         if self.play_btn_rect.collidepoint(pos):
             return "game"
@@ -81,4 +118,10 @@ class Menu:
             return "shop"
         elif self.eq_btn_rect.collidepoint(pos):
             return "ekwipunek"
+        elif self.levels_btn_rect.collidepoint(pos):
+            return "levels"
+        elif self.save_btn_rect.collidepoint(pos):
+            return "save"
+        elif self.load_btn_rect.collidepoint(pos):
+            return "load"
         return None

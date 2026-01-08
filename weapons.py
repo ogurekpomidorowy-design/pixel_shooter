@@ -16,8 +16,8 @@ class Weapons:
             if fireball["x"] > WINDOW_SIZE[0]:
                 self.fireballs.remove(fireball)
 
-    def draw(self, screen):
+    def draw(self, screen, y_offset=0):
         for fireball in self.fireballs:
             pygame.draw.circle(screen, (255, 100, 0), 
-                             (int(fireball["x"]), int(fireball["y"])), 
+                             (int(fireball["x"]), int(fireball["y"] + y_offset)), 
                              self.radius)

@@ -20,12 +20,12 @@ WEAPON_HEIGHT = 80
 
 # Shop items configuration
 SHOP_ITEMS = [
-    {"name": "Glock", "price": 100, "image_path": 'grafiki/1.png'},
-    {"name": "Rewolwer", "price": 250, "image_path": 'grafiki/2.png'},
-    {"name": "Strzelba Pompka", "price": 2, "image_path": 'grafiki/3.png'},
-    {"name": "Pistolet Maszynowy", "price": 750, "image_path": 'grafiki/4.png'},
-    {"name": "AK-47", "price": 1000, "image_path": 'grafiki/5.png'},
-    {"name": "Tomson", "price": 1200, "image_path": 'grafiki/6.png'},
-    {"name": "Karabin Szturmowy MP5", "price": 1500, "image_path": 'grafiki/7.png'},
-    {"name": "Wyrzutnia Rakiet", "price": 3000, "image_path": 'grafiki/8.png'}
+    {"name": "Glock", "price": 50, "image_path": 'grafiki/1.png'},
+    {"name": "Rewolwer", "price": 125, "image_path": 'grafiki/2.png'},
+    {"name": "Strzelba Pompka", "price": 250, "image_path": 'grafiki/3.png'},
+    {"name": "Pistolet Maszynowy", "price": 375, "image_path": 'grafiki/4.png'},
+    {"name": "AK-47", "price": 500, "image_path": 'grafiki/5.png'},
+    {"name": "Tomson", "price": 600, "image_path": 'grafiki/6.png'},
+    {"name": "Karabin Szturmowy MP5", "price": 750, "image_path": 'grafiki/7.png'},
+    {"name": "Wyrzutnia Rakiet", "price": 1500, "image_path": 'grafiki/8.png'}
 ]

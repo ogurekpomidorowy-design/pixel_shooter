@@ -1,3 +1,5 @@
+from save_system_multi import save_game_named, load_game_named, list_saves
+from save_menu import SaveNameInput, LoadSaveMenu
 import pygame
 import time
 import random
@@ -10,6 +12,10 @@ from menu import Menu
 from shop import Shop
 from settings import Settings
 from ekwipunek import Ekwipunek
+
+
+from assets_level2 import level2_assets
+from levels_menu import LevelsMenu
 
 class Game:
     def __init__(self):
@@ -29,16 +35,33 @@ class Game:
         # Reinitialize assets after display is set up
         assets.__init__()
         print("Assets reinitialized after display setup")
+        # Teraz poprawnie ładujemy tło poziomu 2
+        from assets_level2 import level2_assets
+        level2_assets.load_assets()
+        if hasattr(level2_assets, 'background_img') and level2_assets.background_img:
+            print("[DEBUG] Level 2 background loaded in main.py!")
+        else:
+            print("[DEBUG] Level 2 background NOT loaded in main.py!")
         
         self.game_state = "menu"
+        self.save_input = None
+        self.load_menu = None
         self.player = Player()
         self.enemies = Enemy()
         self.weapons = Weapons()
         self.menu = Menu()
         self.shop = Shop()
         self.ekwipunek = Ekwipunek(self.player)
+        self.levels_menu = LevelsMenu(self.player)
+        self.unlocked_level2 = False
+        # Sprawdź czy tło poziomu 2 jest załadowane
+        if hasattr(level2_assets, 'background_img') and level2_assets.background_img:
+            print("[DEBUG] Level 2 background loaded in main.py!")
+        else:
+            print("[DEBUG] Level 2 background NOT loaded in main.py!")
         self.alt_controls = False  # Control scheme toggle
         self.difficulty = 'łatwy'
+        self.level = 1  # Dodany poziom
         self.settings = Settings(self.alt_controls, self.difficulty)
         print("Game initialization complete")
 
@@ -46,7 +69,34 @@ class Game:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
-                
+
+            # Najpierw obsłuż save_input i load_menu, jeśli aktywne
+            if self.game_state == "save_input" and self.save_input:
+                result = self.save_input.handle_event(event)
+                if result == "ok" and self.save_input.text:
+                    save_game_named(self.player, self.unlocked_level2, self.save_input.text)
+                    print(f"Gra zapisana jako: {self.save_input.text}")
+                    self.save_input = None
+                    self.game_state = "menu"
+                return True
+            if self.game_state == "load_menu" and self.load_menu:
+                result = self.load_menu.handle_event(event)
+                if result == "menu":
+                    self.load_menu = None
+                    self.game_state = "menu"
+                elif result:
+                    loaded, unlocked = load_game_named(self.player, result)
+                    if loaded:
+                        self.unlocked_level2 = unlocked
+                        self.levels_menu = LevelsMenu(self.player, unlocked_level2=self.unlocked_level2)
+                        print(f"Gra wczytana: {result}")
+                    else:
+                        print(f"Nie udało się wczytać sejwa: {result}")
+                    self.load_menu = None
+                    self.game_state = "menu"
+                return True
+
+            # Standardowa obsługa eventów
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     if self.game_state in ["shop", "game", "settings"]:
@@ -89,14 +139,27 @@ class Game:
                                 self.enemies.stop()
                             else:
                                 self.enemies.resume()
-                            
+
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if self.game_state == "menu":
                     new_state = self.menu.handle_click(event.pos)
                     if new_state:
-                        self.game_state = new_state
+                        if new_state == "game":
+                            if hasattr(self, 'levels_menu'):
+                                self.level = self.levels_menu.selected_level
+                            self.game_state = new_state
+                        elif new_state == "save":
+                            self.save_input = SaveNameInput()
+                            self.game_state = "save_input"
+                        elif new_state == "load":
+                            self.load_menu = LoadSaveMenu()
+                            self.game_state = "load_menu"
+                        else:
+                            self.game_state = new_state
                         if new_state == "ekwipunek":
                             self.ekwipunek.make_buttons()  # Refresh buttons for new weapons
+                        if new_state == "levels":
+                            self.levels_menu = LevelsMenu(self.player, unlocked_level2=self.unlocked_level2)
                 elif self.game_state == "shop":
                     result = self.shop.handle_click(event.pos, self.player)
                     if result:
@@ -105,32 +168,42 @@ class Game:
                     new_state = self.ekwipunek.handle_click(event.pos)
                     if new_state:
                         self.game_state = new_state
-                if self.game_state == "settings":
-                    if self.settings.handle_click(event.pos):
-                        self.alt_controls = self.settings.alt_controls
-                        self.difficulty = self.settings.difficulty
-        
+                elif self.game_state == "levels":
+                    result = self.levels_menu.handle_click(event.pos)
+                    if result == "menu":
+                        self.game_state = "menu"
+                    elif result == "unlocked":
+                        self.unlocked_level2 = True
+                    elif result is None:
+                        # Zmiana wybranego poziomu
+                        self.level = self.levels_menu.selected_level
+            if self.game_state == "settings":
+                if self.settings.handle_click(event.pos):
+                    self.alt_controls = self.settings.alt_controls
+                    self.difficulty = self.settings.difficulty
         return True
 
     def update(self):
         if self.game_state == "game":
             self.player.update(self.difficulty)
             self.player.handle_input(self.alt_controls)
-            # Spawn enemies
             current_time = pygame.time.get_ticks()
-            # Adjust spawn rate and speed by difficulty
+            # Spawn enemies
             if self.difficulty == 'łatwy':
-                spawn_interval = random.randint(1000, 2000)  # 2x rzadziej
+                spawn_interval = random.randint(1000, 2000)
             elif self.difficulty == 'średni':
-                spawn_interval = random.randint(670, 1330)   # 1.33x rzadziej
+                spawn_interval = random.randint(670, 1330)
             else:
                 spawn_interval = random.randint(500, 1000)
             if current_time - self.enemies.spawn_time > spawn_interval:
-                self.enemies.spawn(self.difficulty)
+                if self.level == 1:
+                    self.enemies.spawn(self.difficulty)
+                elif self.level == 2:
+                    self.enemies.spawn(self.difficulty, level2=True)
                 self.enemies.spawn_time = current_time
-                
+
             # Pass the player object to the enemies' update method
-            self.enemies.update(self.player)
+            self.enemies.update(self.player, level2=(self.level==2))
             self.weapons.update()
 
             # Check collisions between player and enemies
@@ -145,18 +218,31 @@ class Game:
                         return
 
             # Check collisions between fireballs and enemies
-            self.enemies.check_collisions(self.weapons.fireballs, self.player.y, self.player.height, getattr(self.player, 'current_weapon', 'Glock'))
+            self.enemies.check_collisions(self.weapons.fireballs, self.player.y, self.player.height, getattr(self.player, 'current_weapon', 'Glock'), level2=(self.level==2))
 
     def draw(self):
         if self.game_state == "menu":
             self.menu.draw(self.screen)
+        elif self.game_state == "save_input" and self.save_input:
+            self.save_input.draw(self.screen)
+        elif self.game_state == "load_menu" and self.load_menu:
+            self.load_menu.draw(self.screen)
         elif self.game_state == "settings":
             self.settings.alt_controls = self.alt_controls
             self.settings.difficulty = self.difficulty
             self.settings.draw(self.screen)
+        elif self.game_state == "levels":
+            self.levels_menu.unlocked_level2 = self.unlocked_level2
+            self.levels_menu.selected_level = self.level
+            self.levels_menu.draw(self.screen)
         elif self.game_state == "game":
             # Draw background
-            if assets.background_img:
+            if self.level == 2 and level2_assets.background_img:
+                try:
+                    self.screen.blit(level2_assets.background_img, (0, 0))
+                except Exception as e:
+                    print(f"Error drawing level 2 background: {e}")
+            elif assets.background_img:
                 try:
                     self.screen.blit(assets.background_img, (0, 0))
                 except Exception as e:
@@ -164,17 +250,18 @@ class Game:
             else:
                 self.screen.fill(BG_COLOR)
 
-            self.enemies.draw(self.screen, assets.enemy_img)
-            self.weapons.draw(self.screen)
+            y_offset = 20 if self.level == 2 else 0
+            self.enemies.draw(self.screen, assets.enemy_img, y_offset=y_offset)
+            self.weapons.draw(self.screen, y_offset=y_offset)
 
             # Draw player
             if self.player.is_shooting and (pygame.time.get_ticks() - self.player.shoot_start_time) < 100:
                 if assets.shoot_character_img:
-                    self.screen.blit(assets.shoot_character_img, (int(self.player.x), int(self.player.y)))
+                    self.screen.blit(assets.shoot_character_img, (int(self.player.x), int(self.player.y) + y_offset))
             else:
                 self.player.is_shooting = False
                 if assets.main_character_img:
-                    self.screen.blit(assets.main_character_img, (int(self.player.x), int(self.player.y)))
+                    self.screen.blit(assets.main_character_img, (int(self.player.x), int(self.player.y) + y_offset))
 
             # Draw coin counter in top right corner
             font = pygame.font.Font(None, 40)
@@ -196,15 +283,18 @@ class Game:
             self.ekwipunek.draw(self.screen)
         elif self.game_state == "game_over":
             # Keep the current game screen as the background
-            if assets.background_img:
+            if self.level == 2 and level2_assets.background_img:
+                self.screen.blit(level2_assets.background_img, (0, 0))
+            elif assets.background_img:
                 self.screen.blit(assets.background_img, (0, 0))
             else:
                 self.screen.fill(BG_COLOR)
 
-            self.enemies.draw(self.screen, assets.enemy_img)
-            self.weapons.draw(self.screen)
+            y_offset = 20 if self.level == 2 else 0
+            self.enemies.draw(self.screen, assets.enemy_img, y_offset=y_offset)
+            self.weapons.draw(self.screen, y_offset=y_offset)
             if assets.main_character_img:
-                self.screen.blit(assets.main_character_img, (int(self.player.x), int(self.player.y)))
+                self.screen.blit(assets.main_character_img, (int(self.player.x), int(self.player.y) + y_offset))
 
             # Draw 'Game Over' text with a larger font size
             font = pygame.font.Font(None, 100)  # Increased font size to 100

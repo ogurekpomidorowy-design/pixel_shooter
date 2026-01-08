@@ -27,8 +27,8 @@ class Coin:
                 return False
         return True
 
-    def draw(self, screen):
-        screen.blit(self.image, (self.x, self.y))
+    def draw(self, screen, y_offset=0):
+        screen.blit(self.image, (self.x, self.y + y_offset))
 
 class Enemy:
     def __init__(self):
@@ -43,7 +43,7 @@ class Enemy:
     def resume(self):
         self.stopped = False
 
-    def spawn(self, difficulty='łatwy'):
+    def spawn(self, difficulty='łatwy', level2=False):
         enemy_x = 1200
         enemy_y = 400
         base_speed = random.uniform(3, 6)
@@ -62,6 +62,8 @@ class Enemy:
         else:
             hp = 50
             enemy_speed = base_speed
+        if level2:
+            hp += 10
         self.enemies.append({
             "x": enemy_x,
             "y": enemy_y,
@@ -70,7 +72,7 @@ class Enemy:
             "max_hp": hp
         })
 
-    def update(self, player):
+    def update(self, player, level2=False):
         for enemy in self.enemies[:]:
             if not self.stopped:
                 enemy["x"] -= enemy["speed"]
@@ -81,13 +83,17 @@ class Enemy:
         for coin in self.coins[:]:
             if not coin.update(player):
                 try:
-                    player.coins += 1
-                    print(f"Player collected a coin. Total: {player.coins}")
+                    if level2:
+                        player.coins += 2
+                        print(f"Player collected 2 coins. Total: {player.coins}")
+                    else:
+                        player.coins += 1
+                        print(f"Player collected a coin. Total: {player.coins}")
                 except Exception:
                     print("Warning: could not increment player.coins")
                 self.coins.remove(coin)
 
-    def check_collisions(self, fireballs, player_y, player_height, weapon_name="Glock"):
+    def check_collisions(self, fireballs, player_y, player_height, weapon_name="Glock", level2=False):
         # Weapon damage mapping
         weapon_damage = {
             "Glock": 5,
@@ -125,19 +131,19 @@ class Enemy:
                         fireballs.remove(fireball)
                     break
 
-    def draw(self, screen, enemy_img):
+    def draw(self, screen, enemy_img, y_offset=0):
         for enemy in self.enemies:
             if enemy_img:
-                screen.blit(enemy_img, (enemy["x"], enemy["y"]))
+                screen.blit(enemy_img, (enemy["x"], enemy["y"] + y_offset))
             # Draw health bar
             bar_width = 80
             bar_height = 8
             bar_x = enemy["x"]
-            bar_y = enemy["y"] - 16
+            bar_y = enemy["y"] - 16 + y_offset
             hp_ratio = max(enemy["hp"], 0) / enemy["max_hp"]
             pygame.draw.rect(screen, (60, 60, 60), (bar_x, bar_y, bar_width, bar_height))
             pygame.draw.rect(screen, (200, 40, 40), (bar_x, bar_y, int(bar_width * hp_ratio), bar_height))
 
         # Draw coins
         for coin in self.coins:
-            coin.draw(screen)
+            coin.draw(screen, y_offset=y_offset)
