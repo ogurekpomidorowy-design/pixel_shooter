@@ -21,13 +21,15 @@ class Player:
             'Pistolet Maszynowy': 7,
             'AK-47': 8,
             'Tomson': 9,
-            'Karabin Szturmowy MP5': 5,
+            'Karabin Szturmowy MP5': 20,
             'Wyrzutnia Rakiet': 1
         }
+
         self.ammo = {w: self.magazine_sizes[w] for w in self.magazine_sizes}
         self.is_reloading = False
         self.reload_start_time = 0
         self.reload_time = 2000  # ms, default for easy
+        self.last_shot_time = 0
         self.cooldowns = {
             'Glock': int(500 * 0.7),
             'Rewolwer': int(500 * 0.7),
@@ -38,7 +40,28 @@ class Player:
             'Karabin Szturmowy MP5': int(100 * 0.7),
             'Wyrzutnia Rakiet': 0
         }
-        self.last_shot_time = 0
+
+    def auto_shoot(self, difficulty='łatwy', alt_controls=False):
+        keys = pygame.key.get_pressed()
+        auto_weapons = [
+            'Pistolet Maszynowy',
+            'AK-47',
+            'Tomson',
+            'Karabin Szturmowy MP5'
+        ]
+        if self.current_weapon not in auto_weapons:
+            return None
+        if not alt_controls:
+            if keys[pygame.K_x]:
+                result = self.shoot(difficulty)
+                if result:
+                    return result
+        else:
+            if keys[pygame.K_DOWN]:
+                result = self.shoot(difficulty)
+                if result:
+                    return result
+        return None
 
     def jump(self):
         if not self.is_jumping:

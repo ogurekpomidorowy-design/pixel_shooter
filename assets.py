@@ -58,10 +58,18 @@ class AssetLoader:
             pygame.mixer.init()  # Make sure mixer is initialized
             self.shoot_sound = pygame.mixer.Sound('grafiki/strzal.mp3')
             self.shoot_sound.set_volume(self.default_volume)
+            # Dźwięk monety
+            self.coin_sound = pygame.mixer.Sound(r'MUZYCZKA/coin_1_3s.wav')
+            self.coin_sound.set_volume(self.default_volume)
+            # Dźwięk śmierci gracza
+            self.death_sound = pygame.mixer.Sound(r'MUZYCZKA/mario_perfect_death.wav')
+            self.death_sound.set_volume(self.default_volume)
             print("Shooting sound loaded successfully")
         except pygame.error as e:
             print(f"Error loading shooting sound: {e}")
             self.shoot_sound = None
+            self.coin_sound = None
+            self.death_sound = None
 
         # Load weapon images
         for item in SHOP_ITEMS:

@@ -30,11 +30,27 @@ class Coin:
     def draw(self, screen, y_offset=0):
         screen.blit(self.image, (self.x, self.y + y_offset))
 
+class Explosion:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.image = pygame.image.load("grafiki/wybuch-bomby-na-przezroczystym-tle_84443-2542-removebg-preview.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (700, 700))
+        self.timer = 30  # liczba klatek wybuchu
+
+    def update(self):
+        self.timer -= 1
+        return self.timer > 0
+
+    def draw(self, screen, y_offset=0):
+        screen.blit(self.image, (self.x-350, self.y-350 + y_offset))
+
 class Enemy:
     def __init__(self):
         self.enemies = []
         self.spawn_time = 0
         self.coins = []  # List to store coins
+        self.explosions = []  # List to store explosions
         self.stopped = False  # For 'debilny' mode
 
     def stop(self):
@@ -82,6 +98,7 @@ class Enemy:
                 self.enemies.remove(enemy)
 
         # Update coins
+        import assets
         for coin in self.coins[:]:
             if not coin.update(player):
                 try:
@@ -92,9 +109,16 @@ class Enemy:
                     else:
                         player.coins += 1
                         print(f"Player collected a coin. Total: {player.coins}")
+                    if hasattr(assets.assets, 'coin_sound') and assets.assets.coin_sound:
+                        assets.assets.coin_sound.play()
                 except Exception:
                     print("Warning: could not increment player.coins")
                 self.coins.remove(coin)
+
+        # Update explosions
+        for explosion in self.explosions[:]:
+            if not explosion.update():
+                self.explosions.remove(explosion)
 
     def check_collisions(self, fireballs, player_y, player_height, weapon_name="Glock", level2=False):
         # Weapon damage mapping
@@ -116,14 +140,18 @@ class Enemy:
                 if enemy_rect.colliderect(fireball_rect):
                     dmg = weapon_damage.get(weapon_name, 5)
                     if weapon_name == "Wyrzutnia Rakiet":
-                        # Area damage
+                        # Wybuch: natychmiast zabija wszystkich wrogów w dużym obszarze
+                        explosion_rect = pygame.Rect(fireball["x"]-350, fireball["y"]-350, 700, 700)
                         for e2 in self.enemies[:]:
                             e2_rect = pygame.Rect(e2["x"], e2["y"], 80, 80)
-                            if e2_rect.colliderect(pygame.Rect(fireball["x"]-40, fireball["y"]-40, 90, 90)):
-                                if e2 is enemy:
-                                    e2["hp"] -= dmg
-                                else:
-                                    e2["hp"] -= area_damage
+                            if e2_rect.colliderect(explosion_rect):
+                                e2["hp"] = 0  # eksplozja zawsze zabija
+                        self.explosions.append(Explosion(fireball["x"], fireball["y"]))
+                        # Usuń wszystkich wrogów z hp <= 0
+                        for enemy in self.enemies[:]:
+                            if enemy["hp"] <= 0:
+                                self.coins.append(Coin(enemy["x"], enemy["y"], player_y, player_height))
+                                self.enemies.remove(enemy)
                     else:
                         enemy["hp"] -= dmg
                     if enemy["hp"] <= 0:
@@ -150,3 +178,7 @@ class Enemy:
         # Draw coins
         for coin in self.coins:
             coin.draw(screen, y_offset=y_offset)
+
+        # Draw explosions
+        for explosion in self.explosions:
+            explosion.draw(screen, y_offset=y_offset)

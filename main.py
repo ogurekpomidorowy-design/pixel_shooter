@@ -18,6 +18,13 @@ from assets_level2 import level2_assets
 from levels_menu import LevelsMenu
 
 class Game:
+    def update_sound_volumes(self):
+        # Ustaw głośność dźwięków na 0 jeśli muted, inaczej na 1
+        if hasattr(assets, 'coin_sound') and assets.coin_sound:
+            assets.coin_sound.set_volume(0.0 if self.muted else 1.0)
+        if hasattr(assets, 'death_sound') and assets.death_sound:
+            assets.death_sound.set_volume(0.0 if self.muted else 1.0)
+
     def __init__(self):
         pygame.init()
         if pygame.mixer.get_init() is None:
@@ -38,6 +45,15 @@ class Game:
         # Teraz poprawnie ładujemy tło poziomu 2
         from assets_level2 import level2_assets
         level2_assets.load_assets()
+        # --- MUZYKA TŁA ---
+        try:
+            pygame.mixer.music.load("MUZYCZKA/8-Nitowa Przygoda.mp3")
+            # Przycisz muzykę do 0.2 (20%)
+            pygame.mixer.music.set_volume(0.0 if hasattr(self, 'muted') and self.muted else 0.2)
+            pygame.mixer.music.play(-1)  # loop forever
+            print("Background music loaded and playing.")
+        except Exception as e:
+            print(f"Could not load background music: {e}")
         if hasattr(level2_assets, 'background_img') and level2_assets.background_img:
             print("[DEBUG] Level 2 background loaded in main.py!")
         else:
@@ -67,6 +83,7 @@ class Game:
         self.settings = Settings(self.alt_controls, self.difficulty, self.muted)
         print("Game initialization complete")
 
+
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -80,7 +97,11 @@ class Game:
                     print(f"Gra zapisana jako: {self.save_input.text}")
                     self.save_input = None
                     self.game_state = "menu"
-                return True
+                    return True
+                if result == "menu":
+                    self.save_input = None
+                    self.game_state = "menu"
+                    return True
             if self.game_state == "load_menu" and self.load_menu:
                 result = self.load_menu.handle_event(event)
                 if result == "menu":
@@ -101,8 +122,12 @@ class Game:
             # Standardowa obsługa eventów
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    if self.game_state in ["shop", "game", "settings"]:
+                    # ESC działa jak WYJDŹ wszędzie
+                    if self.game_state not in ["menu"]:
+                        self.save_input = None
+                        self.load_menu = None
                         self.game_state = "menu"
+                        return True
                 if self.game_state == "settings":
                     if event.key == pygame.K_c:
                         self.alt_controls = not self.alt_controls
@@ -165,7 +190,9 @@ class Game:
                             self.levels_menu = LevelsMenu(self.player, unlocked_level2=self.unlocked_level2)
                 elif self.game_state == "shop":
                     result = self.shop.handle_click(event.pos, self.player)
-                    if result:
+                    if result == "menu":
+                        self.game_state = "menu"
+                    elif result:
                         print(result)
                 elif self.game_state == "ekwipunek":
                     new_state = self.ekwipunek.handle_click(event.pos)
@@ -185,19 +212,33 @@ class Game:
                 self.settings.difficulty = self.difficulty
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     button = getattr(event, 'button', 1)  # domyślnie 1 jeśli brak
-                    if self.settings.handle_click(event.pos, button):
+                    result = self.settings.handle_click(event.pos, button)
+                    if result == "menu":
+                        self.game_state = "menu"
+                        return True
+                    if result:
                         self.alt_controls = self.settings.alt_controls
                         self.difficulty = self.settings.difficulty
                         self.muted = self.settings.muted
                         # Ustaw mute/unmute dźwięku
                         if assets.shoot_sound:
                             assets.shoot_sound.set_volume(0.0 if self.muted else 1.0)
+                        # Ustaw mute/unmute muzyki tła
+                        pygame.mixer.music.set_volume(0.0 if self.muted else 0.2)
+
         return True
 
     def update(self):
+        self.update_sound_volumes()
         if self.game_state == "game":
             self.player.update(self.difficulty)
             self.player.handle_input(self.alt_controls)
+            # Automatyczne strzelanie po przytrzymaniu X lub strzałki w dół
+            fireball_pos = self.player.auto_shoot(self.difficulty, self.alt_controls)
+            if fireball_pos:
+                self.weapons.add_fireball(fireball_pos["x"], fireball_pos["y"])
+                if assets.shoot_sound:
+                    assets.shoot_sound.play()
             current_time = pygame.time.get_ticks()
             # Spawn enemies
             if self.difficulty == 'łatwy':
@@ -224,9 +265,14 @@ class Game:
                     player_rect = pygame.Rect(self.player.x, self.player.y, 80, 80)
                     if enemy_rect.colliderect(player_rect):
                         print("Game Over")
+                        # Odtwórz dźwięk śmierci
+                        if hasattr(assets, 'death_sound') and assets.death_sound:
+                            assets.death_sound.play()
                         self.game_state = "game_over"
                         self.game_over_time = pygame.time.get_ticks()
                         return
+
+            # Dźwięk monety odtwarzany jest teraz w enemies.py
 
             # Check collisions between fireballs and enemies
             self.enemies.check_collisions(self.weapons.fireballs, self.player.y, self.player.height, getattr(self.player, 'current_weapon', 'Glock'), level2=(self.level==2))
@@ -314,8 +360,8 @@ class Game:
             text = font.render("Game Over", True, (255, 0, 0))
             self.screen.blit(text, (WINDOW_SIZE[0] // 2 - text.get_width() // 2, WINDOW_SIZE[1] // 2 - text.get_height() // 2))
 
-            # Check if 3 seconds have passed
-            if pygame.time.get_ticks() - self.game_over_time > 3000:
+            # Check if 0.7 sekundy (700 ms) minęło
+            if pygame.time.get_ticks() - self.game_over_time > 700:
                 self.reset_game()
                 self.game_state = "menu"
         pygame.display.flip()

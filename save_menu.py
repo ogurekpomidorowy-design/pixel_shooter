@@ -22,6 +22,13 @@ class SaveNameInput:
         ok_txt = assets.font_button.render("ZAPISZ", True, (0,0,0))
         screen.blit(ok_txt, ok_txt.get_rect(center=self.ok_btn.center))
 
+        # Dodaj przycisk WYJDŹ
+        self.exit_btn = pygame.Rect(WINDOW_SIZE[0]//2+120, 650, 200, 50)
+        pygame.draw.rect(screen, (100,100,100), self.exit_btn, border_radius=10)
+        pygame.draw.rect(screen, (255,255,255), self.exit_btn, 2, border_radius=10)
+        exit_txt = assets.font_button.render("WYJDŹ", True, (255,255,255))
+        screen.blit(exit_txt, exit_txt.get_rect(center=self.exit_btn.center))
+
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN and self.active:
             if event.key == pygame.K_RETURN:
@@ -33,6 +40,8 @@ class SaveNameInput:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.ok_btn.collidepoint(event.pos):
                 return "ok"
+            if hasattr(self, 'exit_btn') and self.exit_btn.collidepoint(event.pos):
+                return "menu"
         return None
 
 class LoadSaveMenu:
